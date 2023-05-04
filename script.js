@@ -37,7 +37,7 @@ function processData() {
             city: item.personal.city
         };
     });
-    console.log('--- п.3 Вывод всех пользователей:');
+    console.log('%c--- п.2 Вывод всех пользователей:', 'color: red; font-size: 1.2em');
     fullList.forEach(item => {
         console.log(getInfo.call(item));
     });
@@ -54,8 +54,7 @@ function processData() {
                 });
                 return index > -1;
             });
-            console.log(designersFigma);
-            console.log('--- п.4 Дизайнеры, владеющие Figma:');
+            console.log('%c--- п.3 Дизайнеры, владеющие Figma:', 'color: red; font-size: 1.2em');
             designersFigma.forEach(item => {
                 console.log(getInfo.call(item.personal));
             });
@@ -68,7 +67,7 @@ function processData() {
         });
         return index > -1;
     })
-    console.log('--- п.5 Первый в списке разработчик на React:');
+    console.log('%c--- п.4 Первый в списке разработчик на React:', 'color: red; font-size: 1.2em');
     console.log(getInfo.call(reactDev.personal));
 
 // найдем всех, кто старше 18 лет (person personal: {"birthday":})
@@ -77,7 +76,7 @@ function processData() {
         let dateParts = item.personal.birthday.split('.');
         let birthday = new Date(+dateParts[2], +dateParts[1]-1,+dateParts[0]);
         let ageInMilliseconds = Date.now() - birthday.getTime();
-        let ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25); // account for leap years
+        let ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
         let age = Math.floor(ageInYears);
         if (age > 18) {
             return {
@@ -87,7 +86,7 @@ function processData() {
             }
         }
     })
-    console.log('--- п.6 Список тех, кому больше 18 лет:');
+    console.log('%c--- п.5 Список тех, кому больше 18 лет:', 'color: red; font-size: 1.2em');
     ageList.forEach(item => {
         console.log(getInfo.call(item.personal));
     });
@@ -97,30 +96,72 @@ function processData() {
     let backEnders = specializations.find(item => item.name.toLowerCase() === 'backend');
     if (backEnders) {
         let backEndList = person.filter(item => {
-            return item.personal.specializationId === backEnders.id;
-        })
-        console.log(backEndList);
-        if (backEndList) {
-            let backEndersMoscow = backEndList.filter(item => {
-               return item.personal.city === 'Москва';
-               });
-            console.log(backEndersMoscow);
-            if (backEndersMoscow) {
-                let fullDay = backEndersMoscow.filter(item => {
-                    console.log('1');
-                    let index = item.request.findIndex(fullday => {
-                        console.log(2);
-                        return fullday.value.toLowerCase() === 'Полная';
-                    });
-                    return index > -1;
-                })
-                console.log(fullDay);
+            return item.personal.specializationId === backEnders.id && item.personal.city === 'Москва' && item.request.some(r => r.name === 'Тип занятости' && r.value === 'Полная');
+        });
+        backEndList.sort((a, b) => {
+            let salaryA = a.request.find(r => r.name === 'Зарплата');
+            let salaryB = b.request.find(r => r.name === 'Зарплата');
+            if (salaryA && salaryB) {
+                return salaryB.value - salaryA.value;
+            } else {
+                return 0;
             }
-        }
+        });
+        console.log('%c--- п.6 Список backend разработчиков из Москвы на полный день с сортировкой по ЗП (от большей к меньшей)', 'color: red; font-size: 1.2em');
+        backEndList.forEach(item => {
+            console.log(getInfo.call(item.personal));
+        });
     }
+// Найдем всех дизайнеров (specializations {"name": "designer"}),
+// которые владеют Photoshop и Figma (person "skills": [{"name": "Photoshop" && "name": "Figma"}])
+// на уровне не ниже 6 баллов (person "skills": [{"level": >= 6}])
+    let designersList = person.filter(item => {
+        return item.personal.specializationId === designers.id && item.skills.every(skill => skill.name === 'Photoshop' && skill.level >= 6 || skill.name === 'Figma' && skill.level >= 6);
+    })
+
+
+    console.log('%c--- п.7 Список дизайнеров, которые владеют Photoshop и Figma одновременно на уровне не ниже 6 баллов.', 'color: red; font-size: 1.2em');
+    designersList.forEach(item => {
+        console.log(getInfo.call(item.personal));
+    });
+// Найдем разработчиков по критериям:
+// Дизайнера, который лучше всех владеет Figma (person "skills": [{"name": "Figma"} && {"level": max}]
+// Frontend разработчика с самым высоким уровнем знания Angular (specializations {"name": "frontend"} && person "skills": [{"name": "Angular"} && {"level": max}]
+// Лучшего backend разработчика на Go (specializations {"name": "backend"} && person "skills": [{"name": "Go"} && {"level": max}
+
+    let fronEnders = specializations.find(item => item.name.toLowerCase() === 'frontend');
+
+    let bestDesignerInFigma = findBestInSpecialization(designers, 'Figma');
+    let bestFrontendInAngular = findBestInSpecialization(fronEnders, 'Angular');
+    let bestBackendInGo = findBestInSpecialization(backEnders, 'Go');
+    let bestTeam = bestDesignerInFigma.concat(bestFrontendInAngular, bestBackendInGo);
+
+    console.log('%c--- п.8 Команда для разработки: лучший дизайнер, frontend и backend', 'color: red; font-size: 1.2em');
+    bestTeam.forEach(item => {
+        console.log(getInfo.call(item.personal));
+    });
+
 }
 
 function getInfo() {
     return `${this.firstName} ${this.lastName}, ${this.city}`;
 }
 
+
+function findBestInSpecialization(specialization, skillName) {
+    let maxLevel = 0;
+    let bestPersons = [];
+    person.forEach(person => {
+        if (person.personal.specializationId === specialization.id) {
+            person.skills.forEach(skill => {
+                if (skill.name === skillName && skill.level > maxLevel) {
+                    maxLevel = skill.level;
+                    bestPersons = [person];
+                } else if (skill.name === skillName && skill.level === maxLevel) {
+                    bestPersons.push(person);
+                }
+            });
+        }
+    });
+    return bestPersons;
+}
