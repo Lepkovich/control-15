@@ -25,21 +25,18 @@ Promise.all (
 function processData() {
 // из массива cities возьмем city.name и добавим в personal массива person, создав fullList методом map
     let fullList = person.map(item => {
-        let city = cities.find(function (cityItem) {
+        let city = cities.find(cityItem => {
             return cityItem.id === item.personal.locationId;
         });
         if (city && city.name) {
             item.personal.city = city.name;
         }
-        return {
-            firstName: item.personal.firstName,
-            lastName: item.personal.lastName,
-            city: item.personal.city
-        };
+        return item;
     });
+
     console.log('%c--- п.2 Вывод всех пользователей:', 'color: red; font-size: 1.2em');
     fullList.forEach(item => {
-        console.log(getInfo.call(item));
+        console.log(getInfo.call(item.personal));
     });
 // найдем дизайнеров в specializations по "name": "designer", потом отсортируем только тех, у кого в "skills" есть "name": "Figma".
     let designers = specializations.find(item => item.name.toLowerCase() === 'designer');
@@ -79,11 +76,7 @@ function processData() {
         let ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
         let age = Math.floor(ageInYears);
         if (age > 18) {
-            return {
-                firstName: item.personal.firstName,
-                lastName: item.personal.lastName,
-                city: item.personal.city
-            }
+            return item;
         }
     })
     console.log('%c--- п.5 Список тех, кому больше 18 лет:', 'color: red; font-size: 1.2em');
